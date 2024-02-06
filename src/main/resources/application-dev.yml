@@ -4,6 +4,11 @@ server:
 log:
   destination: 127.0.0.1
 
+logging:
+  config: classpath:logback-dev.xml
+  level:
+    org.hibernate: debug
+
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver

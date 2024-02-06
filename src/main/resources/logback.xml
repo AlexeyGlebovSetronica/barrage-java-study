@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false">
+    <property name="DESTINATION" value="${log.destination:-localhost:5000}"/>
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+    <appender name="LOGSTASH_DEFAULT" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>${DESTINATION}</destination>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <providers>
+                <mdc/> <!-- MDC variables on the Thread will be written as JSON fields-->
+                <context/> <!--Outputs entries from logback's context -->
+                <version/> <!-- Logstash json format version, the @version field in the output-->
+                <logLevel/>
+                <loggerName/>
+
+                <pattern>
+                    <pattern>
+                    </pattern>
+                </pattern>
+
+                <threadName/>
+                <message/>
+
+                <logstashMarkers/> <!-- Useful so we can add extra information for specific log lines as Markers-->
+                <arguments/> <!--or through StructuredArguments-->
+
+                <stackTrace/>
+            </providers>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="LOGSTASH_DEFAULT"/>
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

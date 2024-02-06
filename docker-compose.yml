@@ -69,7 +69,7 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.8.0
     volumes:
       - ./docker/config/elk/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
-      - ./docker/data/elasticsearch:/usr/share/elasticsearch/data:rw
+#      - ./docker/data/elasticsearch:/usr/share/elasticsearch/data:rw
     ports:
       - "9200:9200"
     networks:

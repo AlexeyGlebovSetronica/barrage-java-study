@@ -4,6 +4,7 @@ import com.setronica.eventing.app.EventService;
 import com.setronica.eventing.dto.EventDto;
 import com.setronica.eventing.mapper.EventMapper;
 import com.setronica.eventing.persistence.Event;
+import org.slf4j.Logger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +14,7 @@ import java.util.List;
 @RequestMapping("event/api/v1/events")
 public class EventController {
 
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(EventController.class);
     private final EventService eventService;
     private final EventMapper eventMapper;
 

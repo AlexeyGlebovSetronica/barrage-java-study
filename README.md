@@ -186,17 +186,222 @@ Think why this task should not be solved at the application level?
 
 ## Task 4
 
-concurrency and multi-threading
 logging + ELK
 testing: JUnit5, SpringBootTest
 
-TBD ....
+In Java, logging often uses an API such as SLF4J (Simple Logging Facade for Java) in combination with a specific implementation such as Logback or Log4j.
+Slf4j (Simple Logging Facade for Java) is a facade (interface) for various logging libraries in Java. It provides a common interface for applications, allowing them to use different logging libraries without having to modify the application code. In this way, Slf4j makes code more flexible and portable between different logging implementations.
+Lombok optionally provides a convenient access to Logger via the `@Slf4j` annotation, if without lombok, here is an example usage:
+
+```java
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(CLASS_NAME);
+```
+
+where CLASS_NAME, is the classname of your class, for example, EventController.class.
+
+#### then you can just use it in your code:
+
+```java
+    log.trace("Trigger event or any debug info which make sense");
+    log.trace("Trigger event or any debug info which make sense with exception to propogate", throwable);
+    log.debug("Trigger event or any debug info which make sense");
+    log.debug("Trigger event or any debug info which make sense with exception to propogate", throwable);
+    log.info("Trigger event or any info which make sense");
+    log.info("Trigger event or any info which make sense with exception to propogate", throwable);
+    log.warn("Trigger event or any info which make sense");
+    log.warn("Trigger event or any info which make sense with exception to propogate", throwable);
+    log.error("Error description or any info which make sense");
+    log.error("Error description or any info which make sense with exception to propogate", throwable);
+```
+
+#### Additional Parameters:
+
+```java
+    log.info("Looking for event with id {}", id); // int id, will return for example "Looking for event with id 1"
+    // or
+    log.info("Looking for event with id {}, data {}", id, obj); // some object, will return for example "Looking for event with id `object string representation`", but don't forget to override `toString()` method to convert the object to human-readable representation
+```
+
+As you can see, there are 5 logging levels, each of which can be filtered before outputting to the stream.
+In my practice, there have been cases when detailed logging from production is required, then I changed the logging level of either the application or a separate module of the programme in the application configuration:
+
+#### For the whole application:
+
+```yaml
+# application.yml
+logging:
+  level:
+    root: warn
+```
+
+#### Or separate module (package name):
+
+```yaml
+# application.yml
+logging:
+  level:
+    # where `org.hibernate` is required package name
+    org.hibernate: error
+```
+
+I think this will be enough to understand how the logging system is organised inside a Java application.
+
+### Sending logs to external storage
+
+In Java applications it is possible to use sending logs by different models PUSH model and PULL model.
+Push model implies that application will send logs to external storage by itself, PULL model implies writing logs in a special format, for example, JSON.
+
+#### Push model
+
+To configure sending logs to an external storage, for example, ElasticSearch using Logstash, first you need to add a dependency for the [logback](https://github.com/logfellow/logstash-logback-encoder) library in the `build.gradle` gradle configuration file
+
+```gradle
+dependencies {
+    // ... other dependencies
+    
+	// logging
+	runtimeOnly 'net.logstash.logback:logstash-logback-encoder:7.4'
+	
+	// ... other dependencies
+}
+```
+
+And also add a configuration file for logback, the file defaults to `/resources/logback.xml`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false">
+    <property name="DESTINATION" value="${log.destination:-localhost:5000}"/>
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+    <appender name="LOGSTASH_DEFAULT" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>${DESTINATION}</destination>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <providers>
+                <mdc/> <!-- MDC variables on the Thread will be written as JSON fields-->
+                <context/> <!--Outputs entries from logback's context -->
+                <version/> <!-- Logstash json format version, the @version field in the output-->
+                <logLevel/>
+                <loggerName/>
+
+                <pattern>
+                    <pattern>
+                    </pattern>
+                </pattern>
+
+                <threadName/>
+                <message/>
+
+                <logstashMarkers/> <!-- Useful so we can add extra information for specific log lines as Markers-->
+                <arguments/> <!--or through StructuredArguments-->
+
+                <stackTrace/>
+            </providers>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="LOGSTASH_DEFAULT"/>
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
+```
+
+Where
+
+```xml
+<property name="DESTINATION" value="${log.destination:-localhost:5000}"/>
+```
+
+Sets the value of a variable from the `application.yml` file
+
+```yaml
+log:
+  destination: 127.0.0.1
+```
+
+For `appender` with type `net.logstash.logback.appender.LogstashTcpSocketAppender`, the logstash server address `destination` must be added.
+The `encoder` specifies the format into which the log stream will be transformed, and the `providers` list specifies what should be reflected in it.
+
+And finally
+```xml
+    <root level="INFO">
+        <appender-ref ref="LOGSTASH_DEFAULT"/>
+        <appender-ref ref="CONSOLE"/>
+    </root>
+```
+here sets the direction of log stream output, as specified in the current configuration send to stdout and send to Logstash.
+
+To configure the path to the logback configuration file, you can use the `logging.config=classpath:logback-dev.xml` parameter:
+
+```yaml
+logging:
+  config: classpath:logback-dev.xml
+```
+For example, to avoid sending logs to logstash during development, this can have the unpleasant effect of causing the application to make attempts to send logs.
+
+#### Pull модель
+
+For the pull model, it will be sufficient to change the application log format, for example, to json format
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <mdc/>
+                <timestamp/>
+                <context />
+                <version />
+                <logLevel />
+                <loggerName />
+                <message/>
+                <stackTrace/>
+                <threadName />
+                <logstashMarkers />
+                <arguments />
+            </providers>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="stdout"/>
+    </root>
+</configuration>
+```
+
+Then configure external services to collect logs.
+
+
+Any package versions you can check on [Maven Central](https://mvnrepository.com/ "https://mvnrepository.com/")
+
 
 ## Task 5
+
+RabbitMQ
+
+
+concurrency and multi-threading
+
+how to create Thread
+how to create Runnable object
+how to work with Future and CompletableFuture
+what is the Atomic
+ThreadPool executors
+how to work with threads in a loop
+
+
+explain the Atomic types
+
 
 TBD ....
 
 ## Task 6
+
+healthcheck
+prometheus
+grafana
 
 TBD ....
 
