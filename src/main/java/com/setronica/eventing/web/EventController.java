@@ -60,4 +60,9 @@ public class EventController {
         eventService.deleteEvent(id);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/async")
+    public void asyncOp() throws InterruptedException {
+        eventService.asyncOperation();
+    }
 }

@@ -3,6 +3,7 @@ package com.setronica.eventing.app;
 import com.setronica.eventing.exceptions.NotFoundException;
 import com.setronica.eventing.persistence.Event;
 import com.setronica.eventing.persistence.EventRepository;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,5 +35,11 @@ public class EventService {
 
     public void deleteEvent(int id) {
         eventRepository.deleteById(id);
+    }
+
+    @Async("appThreadPool")
+    public void asyncOperation() throws InterruptedException {
+        Thread.sleep(5000);
+        System.out.println("Done.");
     }
 }

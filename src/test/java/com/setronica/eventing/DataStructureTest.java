@@ -5,10 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.orm.jpa.JpaSystemException;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -18,6 +15,33 @@ public class DataStructureTest {
     private static int a = 0;
     private static int b = 0;
     private static final Object lock = new Object();
+
+    @Test
+    void thread_basic_example() {
+        Runnable myRunnable = () -> {
+            for (int i = 0; i < 5; i++) {
+                System.out.println("Inside a thread: " + i);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        Thread myThread = new Thread(myRunnable);
+
+        myThread.start();
+
+        for (int i = 0; i < 3; i++) {
+            System.out.println("In main thread: " + i);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     @Test
     void multi_thread_test_without_locks() throws InterruptedException {
@@ -98,6 +122,32 @@ public class DataStructureTest {
         System.out.println(intList.size());
 
         executor.shutdown();
+    }
+
+    @Test
+    void future_test() {
+        System.out.println("Started");
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        Callable<String> task = () -> {
+            Thread.sleep(2000);
+            return "Any task data";
+        };
+
+        Future<String> future = executor.submit(task);
+
+        System.out.println("Working here");
+
+        // here another code
+
+        try {
+            String result = future.get();
+            System.out.println("The result is: " + result);
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        } finally {
+            executor.shutdown();
+        }
     }
 
     @Test
