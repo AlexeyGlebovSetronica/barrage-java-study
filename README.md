@@ -831,12 +831,30 @@ This is how multithreaded operations are described, now the call of this method 
 
 ## Task 6
 
+#### The following practical task
+
+You need to implement a method to place an order for a specific event.
+Create an endpoint for order placement
+Create a DTO to transfer information about the order
+Realise order creation:
+* create a table to store information about payments
+* create a payment for the amount of the order
+* check the success of the operation
+* insert a row into the table ticket_order
+* add logging with debugging information and information about the completed task
+
+Extend the `ticket_order` table with a status field to store the status of the ticket in the order, the statuses can be BOOKED, SALE or REFUNDED.
+
+Provide for possible situations of order creation, for example, if the number of tickets will be more than available_seats.
+
+## Task 7
+
 RabbitMQ
 Spring doc
 
 TBD ....
 
-## Task 7
+## Task 8
 
 healthcheck
 prometheus
