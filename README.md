@@ -831,7 +831,7 @@ This is how multithreaded operations are described, now the call of this method 
 
 ## Task 6
 
-#### The following practical task
+### The following practical task
 
 You need to implement a method to place an order for a specific event.
 Create an endpoint for order placement
@@ -849,10 +849,173 @@ Provide for possible situations of order creation, for example, if the number of
 
 ## Task 7
 
-RabbitMQ
-Spring doc
+### Java Messaging (RabbitMQ example)
 
-TBD ....
+In the world of modern software development, ensuring efficient communication between different components of the system becomes an important element. One of the effective ways to realise asynchronous data exchange between components is the use of message queues.
+In this step, let's create a connection to the RabbitMQ server, how to integrate the queuing mechanism into a Spring Boot application using RabbitMQ, a popular messaging solution.
+
+#### Add a RabbitMQ backage dependency to the project
+
+```groovy
+dependencies {
+    // ... 
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    // ... 
+}
+```
+
+#### Setting up a connection to RabbitMQ
+
+```yaml
+spring:
+  rabbitmq:
+    host: 127.0.0.1
+    username: guest
+    password: guest
+```
+
+Or extended listener configuration to prevent an infinite read cycle.
+
+```yaml
+  rabbitmq:
+    host: 127.0.0.1
+    username: rabbit
+    password: qwesda
+    listener:
+      simple:
+        retry:
+          enabled: true
+          max-attempts: 2
+```
+
+#### Describing queue configurations
+
+The Spring Framework provides tools for describing RabbitMQ (and not only RabbitMQ) queue configurations.
+
+```java
+public class RabbitMqQueueConfiguration {
+    private static final String topicExchangeName = "spring-boot-exchange";
+
+    private static final String queueName = "spring-boot";
+
+    @Bean
+    public Queue queue() {
+        return new Queue(queueName);
+    }
+
+    @Bean
+    public TopicExchange exchange() {
+        return new TopicExchange(topicExchangeName);
+    }
+
+    @Bean
+    public Binding binding(Queue queue, TopicExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with("foo.bar.#");
+    }
+}
+```
+
+This configuration describes the settings for the new queue in RabbitMQ. When the application starts, bins will be created and these settings will be reproduced on the RabbitMQ side.
+
+#### Let's describe the listener in our application
+
+```java
+import com.setronica.eventing.app.payment.dto.PaymentResultDto;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.stereotype.Component;
+
+@Component
+public class QueueListener {
+
+    @RabbitListener(queues = {"my-queue"})
+    public void readPaymentEvent(PaymentResultDto message) {
+        // do something
+    }
+}
+```
+
+### Springdoc
+
+We are developing a RESTful API service and to provide documentation about our API it is enough to connect Springdoc to the project and configure endpoints.
+The library will then automatically generate an OpenAPI specification file that can be used by swagger or another library to create a web interface.
+
+Let's look at how to connect OpenAPI in conjunction with swagger to the project and use it.
+
+Let's add a package dependency to the project
+
+```groovy
+implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+```
+
+Adding this dependency is the minimum sufficient to use our service API.
+
+Swagger will be available at http://127.0.0.1:8080/swagger-ui.html, and the OpenAPI specification is available at http://127.0.0.1:8080/v3/api-docs or http://127.0.0.1:8080/v3/api-docs.yaml in yaml format.
+
+You can change the endpoints using the application configuration in the springdoc section:
+
+```yaml
+springdoc:
+  api-docs:
+    path: /service/api-docs
+  swagger-ui:
+    path: /service/swagger-ui.html
+```
+
+In this way a specific address can be set so that they can also be managed, for example in a service mash.
+
+To add documentation it is only necessary to annotate the REST methods, which will be a marker for generating Springdoc specifications.
+
+```java
+    @GetMapping
+    @Operation(tags = {"Event management"}, summary = "Returns a list of events")
+    @ApiResponse(responseCode = "404", description = "Events not found")
+    @ApiResponse(responseCode = "400", description = "Bad request")
+    public List<Event> findAll() {
+        return eventService.getAll();
+    }
+```
+
+The `tags` array defines a group for this endpoint, and the description is specified in the `summary` block.
+The `@ApiResponse` allows to describe HTTP codes returned and additional information to them.
+
+### Practical exercise
+
+Earlier we created a method to sell tickets, in our case we passed the data to create the payment, but to complete the transaction we need to get a response from the payment gateway to close the transaction and send all the transaction information to our customer.
+
+For this we can create a listener for `payment-notifications` queue through which payment notifications will be transmitted and the listener will handle the notifications.
+The messages in this queue will have the format:
+
+```json
+{
+  "payment": "<payment id>",
+  "amount": "<payment amount>",
+  "state": "<payment state>"
+}
+```
+
+From this message you can know exactly the current payment status in order to further process the order.
+If `state` is `AUTHORIZED`, the user has made payment and the transaction can be completed.
+
+If `state` is `FAILED`, the sale must be cancelled and therefore the tickets must be cancelled.
+
+Note that if the sale is cancelled, the tickets also need to be disregarded when calculating the number of available seats. Either they can be deleted or a new status can be entered.
+
+#### Part 2
+
+Now we need to create a queue to notify external systems about events in our application, for example, successful ticket sale.
+We need to describe the RabbitMQ queue configuration, for example, `ticket-sale`, to which our application will send events about successful ticket sale.
+
+The message, should have the format:
+```json
+{
+  "email": "<customer email address>",
+  "title": "<Event title>",
+  "amount": "<total amount of the order>",
+  
+}
+```
+
+Add handlers in the application so that when a sale is successfully completed, this event is sent.
 
 ## Task 8
 

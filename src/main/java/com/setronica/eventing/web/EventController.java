@@ -4,6 +4,8 @@ import com.setronica.eventing.app.EventService;
 import com.setronica.eventing.dto.EventDto;
 import com.setronica.eventing.mapper.EventMapper;
 import com.setronica.eventing.persistence.Event;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.slf4j.Logger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +26,9 @@ public class EventController {
     }
 
     @GetMapping
+    @Operation(tags = {"Merchant user management"}, summary = "Merchant user registration")
+    @ApiResponse(responseCode = "404", description = "Employee not found")
+    @ApiResponse(responseCode = "403", description = "Employee not found")
     public List<Event> findAll() {
         return eventService.getAll();
     }
