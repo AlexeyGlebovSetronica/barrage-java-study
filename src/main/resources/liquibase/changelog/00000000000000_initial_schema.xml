@@ -1,48 +1,23 @@
 <databaseChangeLog
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
     <changeSet id="20240126-1" author="alex.glebov">
-
-        <!--Table definition -->
-
-        <createTable tableName="event">
+        <createTable tableName="events">
             <column name="id" type="int" autoIncrement="true">
-                <constraints primaryKey="true" nullable="false" />
+                <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="title" type="varchar(255)">
-                <constraints nullable="false" />
+                <constraints nullable="false"/>
             </column>
             <column name="description" type="text">
-                <constraints nullable="true" />
+                <constraints nullable="true"/>
             </column>
             <column name="date" type="timestamp">
-                <constraints nullable="false" />
-            </column>
-            <column name="images" type="jsonb">
-                <constraints nullable="true" />
+                <constraints nullable="false"/>
             </column>
         </createTable>
-
-        <!-- Set default value for the `images` field -->
-
-        <addDefaultValue columnName="images"
-                         defaultValue="{}"
-                         tableName="event" columnDataType="jsonb"/>
         <comment>Create `event` table</comment>
-
-        <!-- Also possible SQL definition -->
-
-        <!--<sql>
-            CREATE TABLE event (
-                                   id SERIAL PRIMARY KEY,
-                                   title VARCHAR(255) NOT NULL,
-                                   description TEXT,
-                                   date TIMESTAMP NOT NULL,
-                                   images JSONB not null default '{}'
-            );
-        </sql>-->
 
     </changeSet>
 </databaseChangeLog>

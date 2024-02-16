@@ -2,6 +2,7 @@ package com.setronica.eventing.web;
 
 import com.setronica.eventing.dto.ApplicationExceptionDto;
 import com.setronica.eventing.exceptions.ApplicationLogicException;
+import com.setronica.eventing.exceptions.EventScheduleAlreadyExists;
 import com.setronica.eventing.exceptions.NotFoundException;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -21,5 +22,11 @@ public class MvcExceptionHandler {
     public ResponseEntity<ApplicationExceptionDto> handleNotFoundException(NotFoundException ex) {
         ApplicationExceptionDto exceptionDto = new ApplicationExceptionDto(ex.getMessage());
         return new ResponseEntity<>(exceptionDto, HttpStatusCode.valueOf(404));
+    }
+
+    @ExceptionHandler({EventScheduleAlreadyExists.class})
+    public ResponseEntity<ApplicationExceptionDto> handleEventScheduleAlreadyExists(EventScheduleAlreadyExists ex) {
+        ApplicationExceptionDto exceptionDto = new ApplicationExceptionDto(ex.getMessage());
+        return new ResponseEntity<>(exceptionDto, HttpStatusCode.valueOf(400));
     }
 }

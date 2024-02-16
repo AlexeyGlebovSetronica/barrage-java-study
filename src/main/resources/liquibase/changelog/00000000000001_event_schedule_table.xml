@@ -1,11 +1,10 @@
 <databaseChangeLog
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
     <changeSet id="20240129-1" author="alex.glebov">
         <sql>
-            create table event_schedule
+            create table event_schedules
             (
                 id              serial primary key,
                 event_id        int            not null,
@@ -15,14 +14,45 @@
             );
         </sql>
         <sql>
-            create table ticket_order
+            create table ticket_orders
             (
-                id        serial primary key,
-                firstname varchar(255) not null,
-                lastname  varchar(255) not null,
-                email     varchar(255) not null,
-                amount    int          not null
+                id                serial primary key,
+                event_schedule_id int            not null,
+                firstname         varchar(255)   not null,
+                lastname          varchar(255)   not null,
+                email             varchar(255)   not null,
+                amount            int            not null
             );
         </sql>
+        <addForeignKeyConstraint baseTableName="event_schedules" baseColumnNames="event_id" constraintName="fk_event_id"
+                                 referencedTableName="events" referencedColumnNames="id" onDelete="CASCADE"
+                                 onUpdate="RESTRICT"/>
+        <addForeignKeyConstraint baseTableName="ticket_orders" baseColumnNames="event_schedule_id"
+                                 constraintName="fk_event_schedule_id" referencedTableName="event_schedules"
+                                 referencedColumnNames="id" onDelete="CASCADE" onUpdate="RESTRICT"/>
+        <createProcedure>
+            <![CDATA[
+            CREATE OR REPLACE FUNCTION check_available_seats()
+            RETURNS TRIGGER AS $$
+            DECLARE
+                total_booked_seats INT;
+            BEGIN
+                SELECT SUM(amount) + NEW.amount INTO total_booked_seats
+                FROM ticket_orders
+                WHERE event_schedule_id = NEW.event_schedule_id;
+
+                IF total_booked_seats > (SELECT available_seats FROM event_schedules WHERE id = NEW.event_schedule_id) THEN
+                    RAISE EXCEPTION 'Event offer exceeded';
+                END IF;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+
+            CREATE TRIGGER check_available_seats_trigger
+            BEFORE INSERT ON ticket_orders
+            FOR EACH ROW
+            EXECUTE FUNCTION check_available_seats();
+            ]]>
+        </createProcedure>
     </changeSet>
 </databaseChangeLog>

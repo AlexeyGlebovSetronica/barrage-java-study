@@ -6,21 +6,31 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Setter
 @Getter
 @Entity
-@Table(name = "event_schedule")
+@Table(name = "event_schedules")
 public class EventSchedule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    @Column(nullable = false)
-    private Integer eventId;
+
+    @Column(name = "event_id")
+    private int eventId;
+
     @Column(nullable = false)
     private LocalDate eventDate;
+
     @Column(nullable = false)
     private Integer availableSeats;
+
     @Column(nullable = false)
     private BigDecimal price;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "event_schedule_id")
+    private List<TicketOrder> ticketOrders = new ArrayList<>();
 }
