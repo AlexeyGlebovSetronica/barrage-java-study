@@ -2,6 +2,7 @@ package com.setronica.eventing.web;
 
 import com.setronica.eventing.app.EventService;
 import com.setronica.eventing.dto.EventDto;
+import com.setronica.eventing.dto.EventUpdate;
 import com.setronica.eventing.mapper.EventMapper;
 import com.setronica.eventing.persistence.Event;
 import org.springframework.http.ResponseEntity;
@@ -14,48 +15,35 @@ import java.util.List;
 public class EventController {
 
     private final EventService eventService;
-    private final EventMapper eventMapper;
 
-    public EventController(EventService eventService, EventMapper eventMapper) {
+    public EventController(EventService eventService) {
         this.eventService = eventService;
-        this.eventMapper = eventMapper;
     }
 
-    @GetMapping
-    public List<Event> findAll() {
+    @GetMapping()
+    public List<Event> getAll(){
         return eventService.getAll();
     }
 
-    @GetMapping("search")
-    public List<Event> searchEvents(
-            @RequestParam String q
-    ) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
     @GetMapping("/{id}")
-    public EventDto getById(@PathVariable Integer id) {
-        Event entity = eventService.getById(id);
-        return eventMapper.mapToDto(entity);
+    public Event getById(@PathVariable Integer id) {
+        return eventService.getById(id);
     }
 
     @PostMapping("")
-    public EventDto createEvent(@RequestBody EventDto dto) {
-        Event event = eventMapper.mapToEvent(dto);
-        Event createdEvent = eventService.createEvent(event);
-        return eventMapper.mapToDto(createdEvent);
+    public Event createEvent(@RequestBody Event event) {
+        return eventService.create(event);
     }
 
     @PutMapping("/{id}")
-    public EventDto updateEvent(@RequestBody EventDto dto) {
-        Event event = eventMapper.mapToEvent(dto);
-        Event createdEvent = eventService.updateEvent(event);
-        return eventMapper.mapToDto(createdEvent);
+    public Event updateEvent(@PathVariable int id, @RequestBody EventUpdate newEvent) {
+        Event existingEvent = eventService.getById(id);
+        return eventService.update(newEvent, existingEvent);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEvent(@PathVariable("id") int id) {
-        eventService.deleteEvent(id);
+        eventService.delete(id);
         return ResponseEntity.ok().build();
     }
 }

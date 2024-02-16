@@ -1,130 +1,28 @@
-version: '3.5'
-
-services:
-  db:
-    image: postgres:16.1-alpine
-    ports:
-      - "5432:5432"
-    networks:
-      - dockernet
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    hostname: db.dockernet
-    volumes:
-      - ./docker/initdb:/docker-entrypoint-initdb.d
-      - ./docker/postgres_data:/var/lib/postgresql/data
-
-  keycloak:
-    image: quay.io/keycloak/keycloak:22.0
-    networks:
-      - dockernet
-    ports:
-      - 8180:8080
-    environment:
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://172.21.0.3:5432/keycloak
-      KC_DB_USERNAME: ukeycloak
-      KC_DB_PASSWORD: ukeycloak
-      KC_HOSTNAME_STRICT: "false"
-      KC_HTTP_ENABLED: "true"
-#      KC_PROXY: "edge"
-#      KC_HOSTNAME: 172.21.0.1:8180
-      KC_HOSTNAME_URL: http://172.21.0.1:8180/
-      KC_HOSTNAME_STRICT_BACKCHANNEL: true
-      KEYCLOAK_ADMIN: user
-      KEYCLOAK_ADMIN_PASSWORD: pa55w0rd
-    entrypoint: /opt/keycloak/bin/kc.sh start
-    volumes:
-      - ./docker/config/keycloak/providers:/opt/keycloak/providers
-
-  oauth2-proxy:
-#    image: bitnami/oauth2-proxy:7.5.1
-    image: quay.io/oauth2-proxy/oauth2-proxy:v7.5.1
-    command:
-      - --http-address
-      - 0.0.0.0:4180
-    networks:
-      - dockernet
-    environment:
-      OAUTH2_PROXY_UPSTREAMS: http://172.21.0.5:5601/
-      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: Okta
-      OAUTH2_PROXY_PROVIDER: keycloak-oidc
-      OAUTH2_PROXY_OIDC_ISSUER_URL: http://172.21.0.1:8180/realms/master
-      OAUTH2_PROXY_CLIENT_ID: platform-master-client
-      OAUTH2_PROXY_CLIENT_SECRET: q5KmoeOoE0u7ylMuLq50e4BNCy79eYYK
-      OAUTH2_PROXY_PASS_ACCESS_TOKEN: true
-      OAUTH2_PROXY_EMAIL_DOMAINS: '*'
-      OAUTH2_PROXY_ALLOWED-ROLE: 'admin'
-      OAUTH2_PROXY_REDIRECT_URL: http://sso.example.com/oauth2/callback
-      OAUTH2_PROXY_COOKIE_SECRET: SGE84uYe-J1TCKJQwboDdfUYoEqzSN4XqXMioXbpD-M=
-      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: true
-      OAUTH2_PROXY_COOKIE_NAME: SESSION
-      OAUTH2_PROXY_COOKIE_CSRF_PER_REQUEST: true
-      OAUTH2_PROXY_COOKIE_CSRF_EXPIRE: 5m
-    ports:
-      - 4180:4180
-
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.0
-    volumes:
-      - ./docker/config/elk/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
-      - ./docker/data/elasticsearch:/usr/share/elasticsearch/data:rw
-    ports:
-      - "9200:9200"
-    networks:
-      - dockernet
-    hostname: es.dockernet
-    environment:
-      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.8.0
-    environment:
-      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
-    volumes:
-      - ./docker/config/elk/kibana/config/:/usr/share/kibana/config:ro
-    networks:
-      - dockernet
-    ports:
-      - "5601:5601"
-    hostname: kibana.dockernet
-    depends_on:
-      - elasticsearch
-
-  logstash:
-    image: docker.elastic.co/logstash/logstash:7.8.0
-    volumes:
-      - ./docker/config/elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
-      - ./docker/config/elk/logstash/pipeline:/usr/share/logstash/pipeline:ro
-    ports:
-      - "5000:5000"
-      - "9600:9600"
-    networks:
-      - dockernet
-    hostname: logstash.dockernet
-    environment:
-      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
-    depends_on:
-      - elasticsearch
-
-  rabbitmq:
-    image: rabbitmq:3.12.10-management-alpine
-    hostname: rabbitmq.dockernet
-    networks:
-      - dockernet
-    environment:
-      - RABBITMQ_DEFAULT_USER=rabbit
-      - RABBITMQ_DEFAULT_PASS=qwesda
-    volumes:
-      - ./docker/config/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+version: '2'
 
 volumes:
-  node-red-data:
+  postgres-data:
+    driver: local
 
-networks:
-  dockernet:
-    external: true
+services:
+  postgres:
+    image: postgres:latest
+    restart: always
+    hostname: postgres
+    container_name: expertise-postgres
+    environment:
+      - POSTGRES_USERNAME=postgres
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DATABASE=postgres
+      - POSTGRES_WAL_LEVEL=logical
+    ports:
+      - "5433:5432"
+
+  redis:
+    image: redis
+    restart: always
+    hostname: redis
+    container_name: expertise-redis
+    ports:
+      - "6379:6379"
+

@@ -1,5 +1,6 @@
 package com.setronica.eventing.app;
 
+import com.setronica.eventing.dto.EventUpdate;
 import com.setronica.eventing.exceptions.NotFoundException;
 import com.setronica.eventing.persistence.Event;
 import com.setronica.eventing.persistence.EventRepository;
@@ -24,15 +25,18 @@ public class EventService {
         return eventRepository.findById(id).orElseThrow(() -> new NotFoundException("Event not found with id=" + id));
     }
 
-    public Event createEvent(Event event) {
+    public Event create(Event event) {
         return eventRepository.save(event);
     }
 
-    public Event updateEvent(Event event) {
-        return eventRepository.save(event);
+    public Event update(EventUpdate eventUpdate, Event existingEvent) {
+        existingEvent.setTitle(eventUpdate.getTitle());
+        existingEvent.setDescription(eventUpdate.getDescription());
+        existingEvent.setDate(eventUpdate.getDate());
+        return eventRepository.save(existingEvent);
     }
 
-    public void deleteEvent(int id) {
+    public void delete(int id) {
         eventRepository.deleteById(id);
     }
 }
