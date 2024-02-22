@@ -1,4 +1,3 @@
-!config
-!initdb
 !.gitignore
-*
+postgres_data
+data

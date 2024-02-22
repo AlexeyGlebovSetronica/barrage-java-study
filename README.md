@@ -1019,11 +1019,94 @@ Add handlers in the application so that when a sale is successfully completed, t
 
 ## Task 8
 
-healthcheck
-prometheus
-grafana
+Connect to an Actuator in Spring Boot and Monitor Metrics with Prometheus
 
-TBD ....
+And now we will explore how to connect an actuator in a Spring Boot application and monitor its metrics using Prometheus. We will cover the steps to add the actuator to the application, configure it, and display the metrics on a Prometheus dashboard.
+
+### Add the Actuator Dependency
+
+In your Spring Boot project, add the following dependency to your `build.gradle` file:
+```groovy
+implementation 'org.springframework.boot:spring-boot-starter-actuator'
+```
+### Configure the Actuator
+
+In your application configuration file `application.yml`, add the following configuration to enable the actuator:
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+```
+This configuration enables the web exposure of the actuator endpoints.
+
+This endpoint returns a `Health` object with the status "UP" when the application is healthy.
+
+The actuator endpoint will now be available at
+http://127.0.0.1:8080/actuator
+
+The Actuator provides an extended mechanism for checking the state of the application at:
+http://127.0.0.1:8080/actuator/health
+
+The actuator returns `"status": "UP"` when all required application modules have been successfully loaded and are doing their job. For example, if a connection to the database or message broker is lost while the application is running, the status will be returned as `"status": "DOWN"`.
+
+### Configure Prometheus
+
+To monitor the metrics exposed by the actuator, you can use Prometheus. Add the following dependency to your `build.gradle` file:
+```groovy
+implementation 'io.micrometer:micrometer-registry-prometheus'
+```
+
+And I also prepared `prometheus` configuration for you:
+
+```yaml
+scrape_configs:
+  - job_name: 'service-metrics'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['172.21.0.1:8080'] # gateway IP from `docker-compose.yaml` network gateway IP address, only for dev purposes
+```
+
+### Expose Prometheus Metrics
+
+Let's update configuration of our Spring Boot application, add the following configuration to expose the Prometheus metrics:
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: [ "prometheus", "health" ]
+```
+
+This configuration enables the web exposure of the Prometheus metrics.
+
+### Start the Application
+
+Start your Spring Boot application, and the actuator and Prometheus metrics should be available at the following URLs:
+
+* `http://localhost:8080/actuator/health` (Health endpoint)
+* `http://localhost:8080/actuator/prometheus` (Prometheus metrics)
+
+Conclusion:
+In this article, we have covered the steps to connect an actuator in a Spring Boot application and monitor its metrics using Prometheus. By following these steps, you can easily expose the metrics of your Spring Boot application and monitor them using Prometheus.
+
+### Configuring Grafana dashboard
+
+Here is the easy way to create Spring Boot monitoring dashboard, so you just need to import Grafana dashboard with ID `19004`.
+
+## Task 9
+
+custom metrics
+TBD...
+
+
+## Task 10
+
+Spring Security
+Basic security
+OAuth2
 
 ---
 
